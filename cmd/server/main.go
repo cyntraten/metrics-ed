@@ -29,13 +29,23 @@ type Storage interface {
 	GetMetric(name string) (Metric, bool)
 }
 
-func getQueryParts(urlPath string) (parts []string, error error) {
+func getQueryParts(urlPath string) (parts []string, error error, errCode int) {
 	parts = strings.Split(urlPath, "/")
-	if len(parts) != 5 {
-		return []string{}, fmt.Errorf("Invalid query params")
-	}
 
-	return parts, nil
+	// 404 должен возвращаться только если нет имени метрики, остальное 400
+	switch len(parts) {
+	case 4:
+		metricName := parts[3]
+		if len(metricName) == 0 {
+			return []string{}, fmt.Errorf("Empty metric name"), http.StatusNotFound
+		} else {
+			return []string{}, fmt.Errorf("Empty metric value"), http.StatusBadRequest
+		}
+	case 5:
+		return parts, nil, 0
+	default:
+		return []string{}, fmt.Errorf("Data is not valid"), http.StatusBadRequest
+	}
 }
 
 func getMetricsDataFromParts(parts []string) (metricType string, metricName string, metricValue string) {
@@ -62,10 +72,16 @@ func updateMetrics(w http.ResponseWriter, r *http.Request) {
 
 	// Вынести в отдельную функцию getQueryParts
 	// Вынес!
-	parts, err := getQueryParts(r.URL.Path)
+	parts, err, errCode := getQueryParts(r.URL.Path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
+		switch errCode {
+		case 404:
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		case 400:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Вынес функцию для получения данных метрик из частей запроса
