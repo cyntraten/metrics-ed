@@ -64,7 +64,7 @@ func updateMetrics(w http.ResponseWriter, r *http.Request) {
 	// Вынес!
 	parts, err := getQueryParts(r.URL.Path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
