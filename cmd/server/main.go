@@ -115,6 +115,7 @@ func updateMetrics(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Metric value is not valid", http.StatusBadRequest)
 			return
 		}
+		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
